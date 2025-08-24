@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Create Worker Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-lg mt-10">
+    <h2 class="text-2xl font-bold mb-4">Create Worker Profile</h2>
+
+    <form id="workerProfileForm" class="space-y-4">
+        <div>
+            <label class="block">Category</label>
+            <select name="category" class="w-full border rounded p-2" required>
+                <option value="plumber">Plumber</option>
+                <option value="electrician">Electrician</option>
+                <option value="painter">Painter</option>
+                <option value="carpenter">Carpenter</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block">Location</label>
+            <input type="text" name="location" class="w-full border rounded p-2" required>
+        </div>
+
+        <div>
+            <label class="block">Available?</label>
+            <input type="checkbox" name="is_available" checked>
+        </div>
+
+        <div>
+            <label class="block">Experience (Years)</label>
+            <input type="number" name="experience_years" min="0" class="w-full border rounded p-2">
+        </div>
+
+        <div>
+            <label class="block">Hourly Rate</label>
+            <input type="number" name="hourly_rate" step="0.01" class="w-full border rounded p-2">
+        </div>
+
+        <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">
+            Save Profile
+        </button>
+    </form>
+</div>
+
+<script>
+document.getElementById("workerProfileForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const formData = {
+        category: this.category.value,
+        location: this.location.value,
+        is_available: this.is_available.checked,
+        experience_years: parseInt(this.experience_years.value),
+        hourly_rate: parseFloat(this.hourly_rate.value) || null
+    };
+
+    try {
+        const res = await fetch("/api/accounts/worker/create/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formData),
+            credentials: "include"   // for cookie sends to header
+        });
+
+        if (res.ok) {
+            alert("Profile created successfully!");
+            window.location.href = "{% url 'worker-dashboard'%}";
+        } else {
+            const err = await res.json();
+            alert("Error: " + JSON.stringify(err));
+        }
+    } catch (error) {
+        alert("Something went wrong: " + error);
+    }
+});
+</script>
+{% endblock %}

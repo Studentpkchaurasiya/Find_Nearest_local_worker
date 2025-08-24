@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% load static %}
+{% block content %}
+
+<div class="h-screen w-screen relative">
+
+    <!-- Fullscreen background image -->
+    <div class="absolute inset-0 bg-cover bg-center"
+         style="background-image: url('https://user-images.githubusercontent.com/13468728/233847739-219cb494-c265-4554-820a-bd3424c59065.jpg');">
+    </div>
+
+    <!-- Overlay for better contrast -->
+    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+
+    <!-- Centered login form -->
+    <div class="relative z-10 flex items-center justify-center h-full">
+        <div class="frosted rounded-2xl p-10 w-[400px] shadow-2xl text-white">
+
+            <h2 class="text-3xl font-bold mb-6 text-center">Login</h2>
+
+            <form id="loginForm" class="space-y-5">
+
+                <!-- Role -->
+                <div>
+                    <label for="role" class="block text-sm font-medium">I am a</label>
+                    <select id="role" name="role" required
+                            class="mt-1 block w-full rounded-lg p-3 text-black border border-gray-300 focus:ring focus:ring-blue-300 focus:border-blue-500">
+                        <option value="">-- Select Role --</option>
+                        <option value="worker">Worker</option>
+                        <option value="customer">Customer</option>
+                    </select>
+                </div>
+
+                <!-- Username -->
+                <div>
+                    <label for="username" class="block text-sm font-medium">Username</label>
+                    <input type="text" id="username" name="username" required
+                           class="mt-1 block w-full rounded-lg p-3 text-black border border-gray-300 focus:ring focus:ring-blue-300 focus:border-blue-500">
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label for="password" class="block text-sm font-medium">Password</label>
+                    <input type="password" id="password" name="password" required
+                           class="mt-1 block w-full rounded-lg p-3 text-black border border-gray-300 focus:ring focus:ring-blue-300 focus:border-blue-500">
+                </div>
+
+                <!-- Submit -->
+                <div>
+                    <button type="submit"
+                            class="w-full py-3 bg-white text-black rounded-full font-semibold hover:bg-gray-200 transition">
+                        Log in
+                    </button>
+                </div>
+
+            </form>
+
+            <div class="mt-4 text-center text-sm text-white">
+                Don't have an account? <a href="{% url 'register' %}" class="underline font-medium">Register</a>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+
+        <!-- JS for Fetch API -->
+        <script>
+            document.getElementById("loginForm").addEventListener("submit", async function (event) {
+                event.preventDefault();
+                let role = document.getElementById("role").value;
+
+                let response = await fetch("/api/accounts/login/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        username: document.getElementById("username").value,
+                        password: document.getElementById("password").value,
+                        role: role
+                    }),
+                    credentials: "include"
+                });
+
+                let data = await response.json();
+                if (response.ok) {
+                    if (role === "customer") {
+                        alert(data.message)
+                        window.location.href = "/";
+                    } else if (role === "worker") {
+                        let profile_response = await fetch("/api/accounts/profile/check/", {
+                            method: "GET",
+                            headers: { "Content-type": "application/json" },
+                            credentials: "include"
+                        });
+                        let profileData = await profile_response.json();
+                        if (profileData.has_profile) {
+                            window.location.href = "{% url 'worker-dashboard' %}";
+                        } else {
+                            window.location.href = "{% url 'profile-create'%}";
+                        }
+                    }
+                } else {
+                    alert("Invalid login credentials");
+                }
+            });
+        </script>
+
+        {% endblock %}

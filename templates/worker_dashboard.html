@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto mt-10 p-6 bg-white rounded-3xl shadow-xl">
+
+  <!-- Header with Toggle -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
+    <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-2">
+      👷 Worker Dashboard
+    </h1>
+
+    <!-- Availability Toggle -->
+    <div class="flex flex-col items-center">
+      <label id="toggle-label" class="flex items-center cursor-pointer space-x-3 hidden">
+        <span class="text-gray-600 font-medium text-sm">Availability</span>
+        <div class="relative" id="toggle-container">
+          <input type="checkbox" id="availability-toggle" class="sr-only" />
+          <div id="toggle-bg" class="block bg-gray-300 w-14 h-7 rounded-full transition-colors duration-300"></div>
+          <div id="toggle-dot"
+            class="dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full shadow-md transition-transform duration-300">
+          </div>
+        </div>
+      </label>
+      <p id="toggle-helper" class="text-gray-500 text-xs mt-1 hidden">Please ensure your availability</p>
+    </div>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div id="dashboard" class="space-y-6">
+    <!-- Profile & stats -->
+    <div id="worker-profile" class="mt-6">
+      <p>Loading profile...</p>
+    </div>
+
+    <!-- Pending requests -->
+    <div class="mt-6">
+      <h3 class="text-xl font-semibold text-gray-700 mb-2">Pending Requests</h3>
+      <div id="worker-pending-requests" class="space-y-4">
+        <p>Loading pending requests...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function loadDashboard() {
+  const toggle = document.getElementById("availability-toggle");
+  const toggleBg = document.getElementById("toggle-bg");
+  const toggleDot = document.getElementById("toggle-dot");
+  const toggleLabel = document.getElementById("toggle-label");
+  const toggleHelper = document.getElementById("toggle-helper");
+
+  try {
+    // Fetch dashboard data
+    const res = await fetch("/api/accounts/worker/dashboard/", {
+      method: "GET",
+      credentials: "include"
+    });
+    if (!res.ok) throw "Failed to fetch dashboard";
+    const data = await res.json();
+
+    // Set availability toggle
+    toggle.checked = data.profile.is_available;
+    updateToggleUI(toggle.checked, toggleBg, toggleDot);
+    toggleLabel.classList.remove("hidden");
+    toggleHelper.classList.remove("hidden");
+
+    // Listen for toggle change
+    toggle.addEventListener("change", async () => {
+      const newStatus = toggle.checked;
+      updateToggleUI(newStatus, toggleBg, toggleDot);
+
+      try {
+        const r = await fetch("/api/accounts/worker/availability/", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_available: newStatus })
+        });
+        if (!r.ok) {
+          toggle.checked = !newStatus;
+          updateToggleUI(!newStatus, toggleBg, toggleDot);
+          alert("Failed to update availability");
+        }
+      } catch {
+        toggle.checked = !newStatus;
+        updateToggleUI(!newStatus, toggleBg, toggleDot);
+      }
+    });
+
+    // Update profile/cards only
+    document.getElementById("worker-profile").innerHTML = `
+      <div class="bg-gray-50 p-6 rounded-xl shadow-inner">
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">Welcome, ${data.first_name} ${data.last_name}</h2>
+        <p class="text-gray-600 mb-4">Email: ${data.email}</p>
+
+        <div class="bg-white p-4 rounded-xl shadow mb-6">
+          <h3 class="font-bold text-gray-800 mb-2">Profile</h3>
+          <p><b>Skill:</b> ${data.profile.skill ?? "Not set"}</p>
+          <p><b>Experience:</b> ${data.profile.experience ?? "Not set"} years</p>
+          <p><b>Location:</b> ${data.profile.location ?? "Not set"}</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="p-4 bg-blue-100 rounded-xl shadow text-center hover:scale-105 transform transition duration-200">
+            <p class="text-2xl font-bold text-blue-800">${data.total_bookings}</p>
+            <p class="text-gray-700">Total Bookings</p>
+          </div>
+          <div class="p-4 bg-green-100 rounded-xl shadow text-center hover:scale-105 transform transition duration-200">
+            <p class="text-2xl font-bold text-green-800">${data.completed_bookings}</p>
+            <p class="text-gray-700">Completed</p>
+          </div>
+          <div class="p-4 bg-yellow-100 rounded-xl shadow text-center hover:scale-105 transform transition duration-200">
+            <p class="text-2xl font-bold text-yellow-800">${data.pending_bookings}</p>
+            <p class="text-gray-700">Pending</p>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.error(err);
+    document.getElementById("worker-profile").innerHTML =
+      "<p class='text-red-500'>Error loading dashboard</p>";
+  }
+}
+
+function updateToggleUI(isAvailable, bg, dot) {
+  if (isAvailable) {
+    bg.classList.remove("bg-gray-300");
+    bg.classList.add("bg-green-500");
+    dot.style.transform = "translateX(100%)";
+  } else {
+    bg.classList.remove("bg-green-500");
+    bg.classList.add("bg-gray-300");
+    dot.style.transform = "translateX(0)";
+  }
+}
+
+// Fetch pending bookings every 2 seconds
+async function fetchWorkerPendingRequests() {
+  try {
+    const res = await fetch("/api/bookings/worker/pending/", { credentials: "include" });
+    if (!res.ok) throw "Failed to fetch pending requests";
+    const bookings = await res.json();
+
+    const container = document.getElementById("worker-pending-requests");
+    container.innerHTML = "";
+
+    if (bookings.length === 0) {
+      container.innerHTML = "<p class='text-gray-500'>No pending requests</p>";
+      return;
+    }
+
+    bookings.forEach(booking => {
+      const card = document.createElement("div");
+      card.className = "p-4 bg-gray-50 rounded-xl shadow flex justify-between items-center";
+      card.id = `booking-${booking.id}`;
+      card.innerHTML = `
+        <div>
+          <p><strong>Customer : </strong> ${booking.customer_fname} ${booking.customer_lname}</p>
+          <p><strong>Description : </strong> ${booking.description}</p>
+          <p><strong>Date : </strong> ${booking.date}</p>
+          <p><strong>Timing : </strong> ${booking.time}</p>
+          <p><strong>Location : </strong> ${booking.location}</p>
+          <p><strong>Contact : </strong> ${booking.customer_email}</p>
+          <p><strong>Status : </strong> <span class="status">${booking.status}</span></p>
+        </div>
+        <div class="space-x-2">
+          <button class="accept-btn bg-green-500 text-white px-3 py-1 rounded">Accept</button>
+          <button class="reject-btn bg-red-500 text-white px-3 py-1 rounded">Reject</button>
+        </div>
+      `;
+      container.appendChild(card);
+
+      card.querySelector(".accept-btn").addEventListener("click", () => handleAction(booking.id, "accepted"));
+      card.querySelector(".reject-btn").addEventListener("click", () => handleAction(booking.id, "rejected"));
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// Handle worker action
+async function handleAction(bookingId, action) {
+  try {
+    const res = await fetch(`/api/bookings/${bookingId}/status/`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status:action })
+    });
+    const data = await res.json();
+    alert("Well Done");
+    fetchWorkerPendingRequests();
+  } catch (err) {
+    console.error(err);
+    alert("Failed to perform action");
+  }
+}
+
+// Initialize dashboard
+loadDashboard();
+fetchWorkerPendingRequests();
+setInterval(fetchWorkerPendingRequests, 2000); // poll every 2 seconds
+</script>
+{% endblock %}

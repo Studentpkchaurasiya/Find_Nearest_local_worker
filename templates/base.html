@@ -1,0 +1,161 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Login{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="h-full flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md relative z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <div class="flex items-center">
+                <a href="#" class="flex items-center space-x-2 text-gray-800 hover:text-blue-700 font-bold text-lg transition">
+                    <img src="{% static 'images/background-icon-login.jpg'%}" alt="Your Company Logo" class="w-10 h-10 rounded-full">
+                    <span>TechMitra</span> 
+                </a>
+            </div>
+
+            <!-- Hamburger menu for smaller screens -->
+            <div class="lg:hidden">
+                <button id="mobile-menu-button" class="text-gray-700 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-2">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Regular navigation for larger screens -->
+            <div class="hidden lg:flex items-center space-x-6">
+                <a href="#" class="text-gray-700 hover:text-blue-600 font-semibold transition duration-300 ease-in-out hover:scale-105">About</a>
+                <a href="#" class="text-gray-700 hover:text-blue-600 font-semibold transition duration-300 ease-in-out hover:scale-105">Contact</a>
+
+                {% if user.is_authenticated %}
+                <div class="relative group">
+                    <button class="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-full border hover:bg-gray-200 transition duration-300 ease-in-out hover:scale-105">
+                        <span class="font-medium text-gray-700">{{ user.username }}</span>
+                        <img src="{% static 'images/profile-icon.png' %}" alt="Profile" class="w-8 h-8 rounded-full">
+                    </button>
+                    <div class="absolute right-0 mt-2 w-52 bg-white border rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                        {% if user.role == "customer" %}
+                        <a href="javascript:void(0)" onclick="openProfileDrawer()" class="block px-4 py-2 hover:bg-gray-100 transition duration-150 ease-in-out">My Profile</a>
+                        <a href="#" class="block px-4 py-2 hover:bg-gray-100 transition duration-150 ease-in-out">My Orders</a>
+                        <a href="javascript:void(0)" onclick="logoutUser()" class="block px-4 py-2 hover:bg-gray-100 transition duration-150 ease-in-out">Logout</a>
+                        {% elif user.role == "worker" %}
+                        <a href="javascript:void(0)" onclick="openProfileDrawer()" class="block px-4 py-2 hover:bg-gray-100 transition duration-150 ease-in-out">My Profile</a>
+                        <a href="#" class="block px-4 py-2 hover:bg-gray-100 transition duration-150 ease-in-out">Assigned Jobs</a>
+                        <a href="#" class="block px-4 py-2 hover:bg-gray-100 transition duration-150 ease-in-out">Earnings</a>
+                        <a href="javascript:void(0)" onclick="logoutUser()" class="block px-4 py-2 hover:bg-gray-100 transition duration-150 ease-in-out">Logout</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <a href="{% url 'login' %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out transform hover:scale-105">Login</a>
+                <a href="{% url 'register' %}" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300 ease-in-out transform hover:scale-105">Signup</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Mobile menu content (hidden by default) -->
+        <div id="mobile-menu" class="hidden lg:hidden px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white">
+            <a href="#" class="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition duration-150 ease-in-out">About</a>
+            <a href="#" class="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition duration-150 ease-in-out">Contact</a>
+            {% if user.is_authenticated %}
+                <a href="javascript:void(0)" onclick="openProfileDrawer()" class="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition duration-150 ease-in-out">My Profile</a>
+                {% if user.role == "customer" %}
+                <a href="#" class="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition duration-150 ease-in-out">My Orders</a>
+                {% elif user.role == "worker" %}
+                <a href="#" class="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition duration-150 ease-in-out">Assigned Jobs</a>
+                <a href="#" class="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition duration-150 ease-in-out">Earnings</a>
+                {% endif %}
+                <a href="javascript:void(0)" onclick="logoutUser()" class="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-md transition duration-150 ease-in-out">Logout</a>
+            {% else %}
+                <a href="{% url 'login' %}" class="block px-3 py-2 text-base font-medium text-blue-600 hover:bg-blue-50 rounded-md transition duration-150 ease-in-out">Login</a>
+                <a href="{% url 'register' %}" class="block px-3 py-2 text-base font-medium text-green-600 hover:bg-green-50 rounded-md transition duration-150 ease-in-out">Signup</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+
+    <!-- Page Content -->
+    <main class="flex-1 w-full pb-1 pb-md-4 m-4 bg-gray-50 rounded-lg shadow relative z-0">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-300 py-4 mt-auto relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center">
+            <p class="text-sm">&copy; {{ now|date:"Y" }} My Site. All rights reserved.</p>
+            <div class="flex space-x-4 mt-2 sm:mt-0">
+                <a href="#" class="hover:text-white">Privacy</a>
+                <a href="#" class="hover:text-white">Terms</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Overlay -->
+    <div id="overlay" class="hidden fixed inset-0 bg-black bg-opacity-40 z-40" onclick="closeProfileDrawer()"></div>
+
+    <!-- Profile Drawer -->
+    <div id="profileDrawer"
+        class="fixed top-20 right-4 h-[85%] w-80 bg-white shadow-xl rounded-xl p-6 z-50 transform translate-x-full transition-transform duration-300">
+
+        <h2 class="text-xl font-semibold mb-4">Profile</h2>
+
+        <!-- User Info -->
+        <div class="space-y-2">
+            <p><span class="font-bold">Username:</span> {{ user.username }}</p>
+            <p><span class="font-bold">Email:</span> {{ user.email }}</p>
+            <p><span class="font-bold">Role:</span> {{ user.role }}</p>
+        </div>
+
+        <!-- Buttons -->
+        <a href="#" class="mt-6 block w-full text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+            Edit Profile
+        </a>
+
+        <button class="mt-2 w-full bg-gray-200 py-2 rounded-lg hover:bg-gray-300" onclick="closeProfileDrawer()">
+            Close
+        </button>
+    </div>
+
+
+    <!-- JS -->
+    <script>
+        function logoutUser() {
+            fetch('/api/accounts/logout/', {
+                method: 'POST',
+                credentials: 'include'   // important for cookie-based JWT
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '/';  // redirect to homepage
+                    } else {
+                        alert('Logout failed!');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function openProfileDrawer() {
+            document.getElementById("profileDrawer").classList.remove("translate-x-full");
+            document.getElementById("overlay").classList.remove("hidden");
+        }
+
+        function closeProfileDrawer() {
+            document.getElementById("profileDrawer").classList.add("translate-x-full");
+            document.getElementById("overlay").classList.add("hidden");
+        }
+    </script>
+
+</body>
+
+</html>

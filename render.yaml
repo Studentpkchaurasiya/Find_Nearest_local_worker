@@ -1,0 +1,31 @@
+databases:
+  - name: mysql-db
+    databaseName: services_db            # ⚠️ Replace with your desired DB name
+    user: root                   # ⚠️ Replace with your desired DB user
+    plan: free
+
+services:
+  - type: web
+    name: django-app
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn core.wsgi  # ⚠️ Replace with your Django project folder (the one with settings.py)
+    envVars:
+      - key: DB_NAME
+        value: services_db            # ⚠️ Same as above
+      - key: DB_USER
+        value: root             # ⚠️ Same as above
+      - key: DB_PASSWORD
+        value: Lucknow99856         # ⚠️ Use a strong password here
+      - key: DB_HOST
+        fromDatabase:
+          name: mysql-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: mysql-db
+          property: port
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
