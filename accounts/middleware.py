@@ -1,8 +1,8 @@
 from django.utils.deprecation import MiddlewareMixin
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
-from django.contrib.auth.models import AnonymousUser # for user data on home screen
-from .models import User # for user data on home screen
+from django.contrib.auth.models import AnonymousUser
+from .models import User
 
 class AccessTokenRotationMiddleware(MiddlewareMixin):
     def process_request(self, request):
@@ -25,11 +25,11 @@ class AccessTokenRotationMiddleware(MiddlewareMixin):
                 if refresh_token:
                     try:
                         refresh = RefreshToken(refresh_token)
-                        refresh.check_exp()  # 🔥 ensures refresh expiration checked
+                        refresh.check_exp()  # ensures refresh expiration checked
                         new_access = refresh.access_token
                         request.new_access_token = str(new_access)
-                        user_id = refresh["user_id"] # for user data on home screen
-                        request.user = User.objects.get(id=user_id) # for user data on home screen
+                        user_id = refresh["user_id"]
+                        request.user = User.objects.get(id=user_id)
                         return
                     except TokenError:
                         #  Refresh token also invalid/expired → force logout immediately
@@ -42,8 +42,8 @@ class AccessTokenRotationMiddleware(MiddlewareMixin):
                 refresh.check_exp()  #  validate expiry
                 new_access = refresh.access_token
                 request.new_access_token = str(new_access)
-                user_id = refresh["user_id"] # for user data on home screen
-                request.user = User.objects.get(id=user_id) # for user data on home screen
+                user_id = refresh["user_id"]
+                request.user = User.objects.get(id=user_id)
             except TokenError:
                 #  Refresh expired → logout
                 request.force_logout = True
